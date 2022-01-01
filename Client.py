@@ -11,12 +11,24 @@ class Client:
     def initializeClient(self):
         self.socket.connect((self.host, self.port))
 
-    def handleServerConnection(self, message):
-        initialResponse = self.socket.recv(1024)
-        print(initialResponse.decode())
-        sendMessage = self.nickName + ' ' + message
-        self.socket.send(str.encode(sendMessage))
-        while True:
-            inputMessage = input('Write your message here \n')
-            self.socket.send(str.encode(inputMessage))
+    def handleListConnectedClientsMessage(self):
+        message = 'list'
+        self.socket.send(str.encode(message))
+        connectedUsersList = self.socket.recv(1024)
+        print(connectedUsersList.decode())
 
+    def handleServerConnection(self):
+        try:
+            self.socket.send(str.encode(self.nickName))
+            while True:
+                query = input('Operations that you can do are: list \n')
+                if query == 'list':
+                    self.handleListConnectedClientsMessage()
+                elif query == '':
+                    self.closeClientSocket()
+        except KeyboardInterrupt:
+            self.closeClientSocket()
+
+    def closeClientSocket(self):
+        print('Shutting down the client')
+        self.socket.close()

@@ -11,8 +11,7 @@ def main():
     port = int(sys.argv[3])
     client = Client(nickName=nickName, host=hostAddress, port=port)
     client.initializeClient()
-    message = 'Hello world'
-    client.handleServerConnection(message=message)
+    client.handleServerConnection()
 
 
 if __name__ == "__main__":
