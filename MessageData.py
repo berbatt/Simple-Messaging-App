@@ -1,3 +1,5 @@
+from FilterType import FilterType
+
 class MessageData:
 
     def __init__(self, senderName=' ', receiverName=' ', content=' ', type=' '):
@@ -30,13 +32,15 @@ class MessageData:
         return result
 
     def serialize(self):
-        messageString = self.type + self.delimiter + self.senderName + self.delimiter + self.receiverName + self.delimiter + self.content
+        typeString = self.type if isinstance(self.type, str) else self.type.toString()
+        messageString = typeString + self.delimiter + self.senderName + self.delimiter + self.receiverName + self.delimiter + self.content
         return str.encode(messageString)
 
     def deserialize(self, messageByteArray):
         messageString = messageByteArray.decode()
         messageAsList = list(messageString.split(self.delimiter))
-        self.type = messageAsList[0]
+        typeString = messageAsList[0]
+        self.type = typeString if (typeString == 'list' or typeString == 'message' or typeString == 'response') else FilterType().fromString(typeString)
         self.senderName = messageAsList[1]
         self.receiverName = messageAsList[2]
         self.content = ''.join(messageAsList[3:])
