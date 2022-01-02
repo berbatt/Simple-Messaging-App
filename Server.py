@@ -1,7 +1,7 @@
 import socket
 import sys
 import threading
-
+from MessageData import MessageData
 
 class Server:
 
@@ -22,35 +22,46 @@ class Server:
             print('Server is waiting for clients to connect')
             while self.isOnline:
                 clientSocket, clientAddress = self.socket.accept()
-                print('Connected to: ' + clientAddress[0] + ':' + str(clientAddress[1]))
+                print('Connected to: ' + clientAddress[0] + ' : ' + str(clientAddress[1]))
                 clientThread = threading.Thread(target=self.handleClientConnection, args=(clientSocket, ))
                 clientThread.start()
-        except KeyboardInterrupt:
+        except ConnectionError:
             self.closeServer()
 
-    def handleListRequest(self, clientSocket):
-        message = ' , '.join(self.clientDict.keys())
-        print(message)
-        clientSocket.send(str.encode(message))
+    def handleListRequest(self, messageData):
+        listMessageContent = ' , '.join(self.clientDict.keys())
+        message = MessageData(content=listMessageContent, type='list')
+        self.clientDict[messageData.getSenderName()].send(message.serialize())
 
-    def handleRequests(self, data, clientSocket):
-        message = data.decode()
-        if message == 'list':
-            self.handleListRequest(clientSocket)
+    def handleSendMessageToUser(self, messageData):
+        if messageData.getReceiverName() in self.clientDict:
+            # save to database in here
+            self.clientDict[messageData.getReceiverName()].send(messageData.serialize())
+        else:
+            message = MessageData(content='There is no actively connected user named ' + messageData.getReceiverName())
+            self.clientDict[messageData.getSenderName()].send(message.serialize())
+
+    def handleRequests(self, data):
+        message = MessageData().deserialize(data)
+        if message.getType() == 'list':
+            self.handleListRequest(message)
+        elif message.getType() == 'message':
+            self.handleSendMessageToUser(message)
 
     def handleClientConnection(self, clientSocket):
-        nickName = (clientSocket.recv(1024)).decode()
+        nickName = (clientSocket.recv(2048)).decode()
         self.clientDict[nickName] = clientSocket
         print(nickName + ' is added to server dictionary')
-        while True:
-            data = clientSocket.recv(1024)
-            if not data:
-                break
-            self.handleRequests(data, clientSocket)
-
-        self.clientDict.pop(nickName)
-        print(nickName + ' is removed from the server dictionary')
-        clientSocket.close()
+        try:
+            while True:
+                data = clientSocket.recv(2048)
+                if not data:
+                    raise ConnectionError
+                self.handleRequests(data)
+        except ConnectionError:
+            self.clientDict.pop(nickName)
+            print(nickName + ' is removed from the server dictionary')
+            clientSocket.close()
 
     def closeServer(self):
         print('Shutting down the server')
