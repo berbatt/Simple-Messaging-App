@@ -4,7 +4,7 @@ import sys
 
 def main():
     if len(sys.argv) != 2:
-        print("You have to give the port number to listen")
+        print("Argument should be the port number to listen")
         exit()
 
     hostAddress = '127.0.0.1'

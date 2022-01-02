@@ -2,6 +2,8 @@ import socket
 import sys
 import threading
 from MessageData import MessageData
+import DatabaseOperations
+from FilterType import FilterType
 
 class Server:
 
@@ -28,17 +30,30 @@ class Server:
         except ConnectionError:
             self.closeServer()
 
+    def getCurrentlyConnectedUsers(self):
+        return ' , '.join(self.clientDict.keys())
+
     def handleListRequest(self, messageData):
-        message = MessageData(content=' , '.join(self.clientDict.keys()), type='list')
+        message = MessageData(content=self.getCurrentlyConnectedUsers(), type='list')
         self.clientDict[messageData.getSenderName()].send(message.serialize())
 
     def handleSendMessageToUser(self, messageData):
         if messageData.getReceiverName() in self.clientDict:
-            # save to database in here
+            DatabaseOperations.addMessage(message=messageData)
             self.clientDict[messageData.getReceiverName()].send(messageData.serialize())
         else:
             message = MessageData(content='There is no actively connected user named ' + messageData.getReceiverName())
             self.clientDict[messageData.getSenderName()].send(message.serialize())
+
+    def handleFilterRequest(self, messageData):
+        result = list()
+        filterType = messageData.getType()
+        if filterType.getDirection() == 'from-me':
+            result.extend(DatabaseOperations.getMessageBySenderName(messageData.getSenderName()))
+        elif filterType.getDirection() == 'to-me':
+            result.extend(DatabaseOperations.getMessageBySenderName(messageData.getMessageByReceiverName()))
+        message = MessageData(content=' , '.join(result), type='response')
+        self.clientDict[messageData.getSenderName()].send(message.serialize())
 
     def handleRequests(self, data):
         message = MessageData().deserialize(data)
@@ -46,6 +61,8 @@ class Server:
             self.handleListRequest(message)
         elif message.getType() == 'message':
             self.handleSendMessageToUser(message)
+        else:
+            self.handleFilterRequest(message)
 
     def handleClientConnection(self, clientSocket):
         nickName = (clientSocket.recv(2048)).decode()
@@ -56,7 +73,7 @@ class Server:
                 if not data:
                     raise ConnectionError
                 self.handleRequests(data)
-        except ConnectionError:
+        except ConnectionError or KeyboardInterrupt:
             self.clientDict.pop(nickName)
             clientSocket.close()
 

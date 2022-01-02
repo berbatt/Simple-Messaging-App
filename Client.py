@@ -41,7 +41,7 @@ class Client:
         try:
             while True:
                 self.getInputAndQueryFromServer()
-        except ConnectionError:
+        except ConnectionError or KeyboardInterrupt:
             self.closeClientSocket()
 
     def handleServerReceiveOperations(self):
@@ -50,7 +50,7 @@ class Client:
                 receivedMessage = self.socket.recv(2048)
                 message = MessageData().deserialize(receivedMessage)
                 print(message.toString())
-        except ConnectionError:
+        except ConnectionError or KeyboardInterrupt:
             print('Client is closing')
 
     def closeClientSocket(self):
