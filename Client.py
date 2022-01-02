@@ -1,6 +1,7 @@
 import socket
 import threading
 from MessageData import MessageData
+from InputParser import InputParser
 
 class Client:
 
@@ -9,32 +10,24 @@ class Client:
         self.host = host
         self.port = port
         self.socket = socket.socket()
+        self.inputParser = InputParser(self.nickName)
 
     def initializeClient(self):
         self.socket.connect((self.host, self.port))
         self.socket.send(str.encode(self.nickName))
 
-    def sendListConnectedClientsMessage(self):
-        message = MessageData(senderName=self.nickName, type='list')
+    def sendMessageToServer(self, message):
         self.socket.send(message.serialize())
 
-    def sendMessageToUser(self, receiverNickName, content):
-        message = MessageData(senderName=self.nickName, receiverName=receiverNickName, content=content, type='message')
-        self.socket.send(message.serialize())
-
-    def queryFromServer(self):
-        while True:
-            query = input()
-            if query == 'list':
-                self.sendListConnectedClientsMessage()
-            elif query == '':
-                self.closeClientSocket()
-                break
-            else:
-                queryAsList = list(query.split(' '))
-                receiverNickName = queryAsList[0]
-                content = ' '.join(queryAsList[1:])
-                self.sendMessageToUser(receiverNickName, content)
+    def getInputAndQueryFromServer(self):
+        self.inputParser.getInput()
+        message = self.inputParser.generateMessage()
+        if message is not None:
+            self.sendMessageToServer(message)
+        else:
+            print('Please enter a valid input to client')
+            print('Valid inputs are: list, target nickname <message>, get last <x>, ' +
+                  'get contains <text>, get from-me or to-me')
 
     def handleServerConnection(self):
         senderThread = threading.Thread(target=self.handleServerSendOperations)
@@ -46,7 +39,8 @@ class Client:
 
     def handleServerSendOperations(self):
         try:
-            self.queryFromServer()
+            while True:
+                self.getInputAndQueryFromServer()
         except ConnectionError:
             self.closeClientSocket()
 
@@ -54,8 +48,7 @@ class Client:
         try:
             while True:
                 receivedMessage = self.socket.recv(2048)
-                message = MessageData()
-                message.deserialize(receivedMessage)
+                message = MessageData().deserialize(receivedMessage)
                 print(message.toString())
         except ConnectionError:
             print('Client is closing')

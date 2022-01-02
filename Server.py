@@ -29,8 +29,7 @@ class Server:
             self.closeServer()
 
     def handleListRequest(self, messageData):
-        listMessageContent = ' , '.join(self.clientDict.keys())
-        message = MessageData(content=listMessageContent, type='list')
+        message = MessageData(content=' , '.join(self.clientDict.keys()), type='list')
         self.clientDict[messageData.getSenderName()].send(message.serialize())
 
     def handleSendMessageToUser(self, messageData):
@@ -51,7 +50,6 @@ class Server:
     def handleClientConnection(self, clientSocket):
         nickName = (clientSocket.recv(2048)).decode()
         self.clientDict[nickName] = clientSocket
-        print(nickName + ' is added to server dictionary')
         try:
             while True:
                 data = clientSocket.recv(2048)
@@ -60,7 +58,6 @@ class Server:
                 self.handleRequests(data)
         except ConnectionError:
             self.clientDict.pop(nickName)
-            print(nickName + ' is removed from the server dictionary')
             clientSocket.close()
 
     def closeServer(self):

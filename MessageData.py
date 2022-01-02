@@ -20,7 +20,14 @@ class MessageData:
         return self.type
 
     def toString(self):
-        return self.type + ' ' + self.senderName + ' ' + self.receiverName + ' ' + self.content
+        result = ''
+        if self.type == 'list':
+            result = 'Connected users are: ' + self.content
+        elif self.type == 'message':
+            result = 'Message from ' + self.senderName + ' : ' + self.content
+        else:
+            result = self.content
+        return result
 
     def serialize(self):
         messageString = self.type + self.delimiter + self.senderName + self.delimiter + self.receiverName + self.delimiter + self.content
