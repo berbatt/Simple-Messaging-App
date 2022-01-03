@@ -24,6 +24,33 @@ class FilterType:
     def getDirection(self):
         return self.direction
 
+    def isLastFilter(self):
+        return self.last != 0
+
+    def isContainsTextFilter(self):
+        return self.containsText != ''
+
+    def isDirectionFilter(self):
+        return self.direction != ''
+
+    def isDirectionFromMe(self):
+        return self.direction == 'from-me'
+
+    def isDirectionToMe(self):
+        return self.direction == 'to-me'
+
+    def isOnlyLastFilter(self):
+        return self.isLastFilter() and not self.isDirectionFilter() and not self.isContainsTextFilter()
+
+    def isOnlyContainsText(self):
+        return self.isContainsTextFilter() and not self.isDirectionFilter() and not self.isLastFilter()
+
+    def isOnlyFromMeFilter(self):
+        return self.isDirectionFromMe() and not self.isContainsTextFilter() and not self.isLastFilter()
+
+    def isOnlyToMeFilter(self):
+        return self.isDirectionToMe() and not self.isContainsTextFilter() and not self.isLastFilter()
+
     def toString(self):
         return str(self.last) + self.delimiter + self.containsText + self.delimiter + self.direction
 
