@@ -30,4 +30,4 @@ After running the client program, here are the queries that a client can request
 **get contains hello** -> shows the messages containing 'hello' text related to them   <br />
 **get from-me** -> shows the messages which are sent by the connected client
 
-Or you can combine any of the get queries describes above like: get last X contains hi from-me (or to-me)
+Or you can combine any of the get queries described above like: get last X contains hi from-me (or to-me)
