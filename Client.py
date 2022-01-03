@@ -30,8 +30,8 @@ class Client:
                   'get contains <text>, get from-me or to-me')
 
     def handleServerConnection(self):
-        senderThread = threading.Thread(target=self.handleServerSendOperations)
-        receiverThread = threading.Thread(target=self.handleServerReceiveOperations)
+        senderThread = threading.Thread(target=self.handleServerSendOperations , daemon=True)
+        receiverThread = threading.Thread(target=self.handleServerReceiveOperations, daemon=True)
         senderThread.start()
         receiverThread.start()
         senderThread.join()

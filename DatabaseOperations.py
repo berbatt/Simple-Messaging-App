@@ -38,3 +38,10 @@ def getMessageByReceiverName(receiverName):
     for row in sendToMe:
         result.append(row.messageBody)
     return result
+
+def getMessageByContainingText(text):
+    result = list()
+    containsText = MessageModel.select().where(MessageModel.messageBody.contains(text))
+    for row in containsText:
+        result.append(row.messageBody)
+    return result

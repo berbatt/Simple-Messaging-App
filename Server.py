@@ -25,9 +25,9 @@ class Server:
             while self.isOnline:
                 clientSocket, clientAddress = self.socket.accept()
                 print('Connected to: ' + clientAddress[0] + ' : ' + str(clientAddress[1]))
-                clientThread = threading.Thread(target=self.handleClientConnection, args=(clientSocket, ))
+                clientThread = threading.Thread(target=self.handleClientConnection, args=(clientSocket, ), daemon=True)
                 clientThread.start()
-        except ConnectionError:
+        except ConnectionError or KeyboardInterrupt:
             self.closeServer()
 
     def getCurrentlyConnectedUsers(self):
@@ -48,10 +48,10 @@ class Server:
     def handleFilterRequest(self, messageData):
         result = list()
         filterType = messageData.getType()
-        if filterType.getDirection() == 'from-me':
+        if filterType.isOnlyFromMeFilter():
             result.extend(DatabaseOperations.getMessageBySenderName(messageData.getSenderName()))
-        elif filterType.getDirection() == 'to-me':
-            result.extend(DatabaseOperations.getMessageBySenderName(messageData.getMessageByReceiverName()))
+        elif filterType.isOnlyToMeFilter():
+            result.extend(DatabaseOperations.getMessageByReceiverName(messageData.getReceiverName()))
         message = MessageData(content=' , '.join(result), type='response')
         self.clientDict[messageData.getSenderName()].send(message.serialize())
 
