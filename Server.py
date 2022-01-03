@@ -42,16 +42,31 @@ class Server:
             DatabaseOperations.addMessage(message=messageData)
             self.clientDict[messageData.getReceiverName()].send(messageData.serialize())
         else:
-            message = MessageData(content='There is no actively connected user named ' + messageData.getReceiverName())
+            message = MessageData(type='response', content='There is no actively connected user named ' + messageData.getReceiverName())
             self.clientDict[messageData.getSenderName()].send(message.serialize())
 
     def handleFilterRequest(self, messageData):
         result = list()
         filterType = messageData.getType()
         if filterType.isOnlyFromMeFilter():
-            result.extend(DatabaseOperations.getMessageBySenderName(messageData.getSenderName()))
+            result = DatabaseOperations.getMessageBySenderName(messageData.getSenderName())
         elif filterType.isOnlyToMeFilter():
-            result.extend(DatabaseOperations.getMessageByReceiverName(messageData.getReceiverName()))
+            result = DatabaseOperations.getMessageByReceiverName(messageData.getSenderName())
+        elif filterType.isOnlyContainsText():
+            result = DatabaseOperations.getMessageByContainingText(filterType.getContainsText(), messageData.getSenderName(), direction='both')
+        elif filterType.isOnlyLastFilter():
+            result = DatabaseOperations.getMessagesOfTheUser(messageData.getSenderName())[0:filterType.getLast()]
+        else:
+            if filterType.isContainsTextFilter():
+                result = DatabaseOperations.getMessageByContainingText(filterType.getContainsText(),
+                                                                       messageData.getSenderName(),
+                                                                       direction=filterType.getDirection())
+            else:
+                result = DatabaseOperations.getMessageByContainingText('',
+                                                                       messageData.getSenderName(),
+                                                                       direction=filterType.getDirection())
+            if filterType.isLastFilter():
+                result = result[0:filterType.getLast()]
         message = MessageData(content=' , '.join(result), type='response')
         self.clientDict[messageData.getSenderName()].send(message.serialize())
 

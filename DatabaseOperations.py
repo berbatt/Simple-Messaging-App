@@ -25,23 +25,41 @@ def addMessage(message):
                                 creationDate=datetime.datetime.now())
 
 
-def getMessageBySenderName(senderName):
+def queryResultToList(queryResult):
     result = list()
-    sendByMe = MessageModel.select().where(MessageModel.senderName == senderName)
-    for row in sendByMe:
+    for row in queryResult:
         result.append(row.messageBody)
     return result
+
+def filterMessagesOfTheUser(queryResult, nickName, direction):
+    result = list()
+    for row in queryResult:
+        if direction == 'both' or direction == '':
+            if row.senderName == nickName or row.receiverName == nickName:
+                result.append(row.messageBody)
+        elif direction == 'to-me':
+            if row.receiverName == nickName:
+                result.append(row.messageBody)
+        elif direction == 'from-me':
+            if row.senderName == nickName:
+                result.append(row.messageBody)
+    return result
+
+def getMessageBySenderName(senderName):
+    sendByMe = MessageModel.select().order_by(MessageModel.creationDate.desc()).where(MessageModel.senderName == senderName)
+    return queryResultToList(sendByMe)
+
 
 def getMessageByReceiverName(receiverName):
-    result = list()
-    sendToMe = MessageModel.select().where(MessageModel.receiverName == receiverName)
-    for row in sendToMe:
-        result.append(row.messageBody)
-    return result
+    sendToMe = MessageModel.select().order_by(MessageModel.creationDate.desc()).where(MessageModel.receiverName == receiverName)
+    return queryResultToList(sendToMe)
 
-def getMessageByContainingText(text):
-    result = list()
-    containsText = MessageModel.select().where(MessageModel.messageBody.contains(text))
-    for row in containsText:
-        result.append(row.messageBody)
-    return result
+
+def getMessageByContainingText(text, nickName, direction):
+    containsText = MessageModel.select().order_by(MessageModel.creationDate.desc()).where(MessageModel.messageBody.contains(text))
+    return filterMessagesOfTheUser(containsText, nickName, direction)
+
+def getMessagesOfTheUser(nickName):
+    messagesOfTheUser = MessageModel.select().order_by(MessageModel.creationDate.desc()).where((MessageModel.senderName == nickName) |
+                                                                                               (MessageModel.receiverName == nickName))
+    return queryResultToList(messagesOfTheUser)
